@@ -44,13 +44,17 @@ namespace butler::cli{
     }
 
     int handle_commands(int argc, char* argv[]){
+        // argc - для чего используется? 
+        // если запускать в терминале то в основном используются слова
+        // может argc - задел на будущее? например для отображения статуса сразу нескольких 
+        //  моделек
         if (argc <= 1){
             print_help();
             return 0;
         }
 
         const std::string_view command{argv[1]};
-
+        
         if (command == "--help" || command == "help") {
             print_help();
             return 0;
@@ -64,10 +68,5 @@ namespace butler::cli{
             return run_status();
         }
 
-        print_unknow_command(command);
-
         return 1;
-
-    }
-
 } //namespace butler::cli 

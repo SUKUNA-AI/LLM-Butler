@@ -1,6 +1,6 @@
-# GPU Butler
+# LLM Butler
 
-GPU Butler - это учебный C++20 CLI-проект, с которого начинается разработка будущего local-first runtime manager для LLM backend'ов.
+LLM Butler - это учебный C++20 CLI-проект, с которого начинается разработка будущего local-first runtime manager для LLM backend'ов.
 
 Сейчас это ранний V0-скелет:
 - проект собирается в один CLI-бинарь;

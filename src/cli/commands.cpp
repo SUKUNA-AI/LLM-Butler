@@ -39,7 +39,7 @@ void print_help()
     // help look pretier
     std::cout << "\n"
                  "╔══════════════════════════════════════════════════════════╗\n"
-                 "║                    GPU BUTLER v1.0                       ║\n"
+                 "║                    GPU BUTLER v0.1                       ║\n"
                  "║         Local-first runtime manager for LLM backends     ║\n"
                  "╚══════════════════════════════════════════════════════════╝\n"
                  "\n"
@@ -98,6 +98,7 @@ int handle_commands(int argc, char* argv[])
         return run_status();
     }
 
+    print_unknow_command(command);
     return 1;
 }
 } // namespace butler::cli

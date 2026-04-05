@@ -28,7 +28,7 @@ int run_init() {
     if (exists) {
         std::cout << "Butler root directory already exists: "
                   << root.string() << '\n';
-        return 0;
+        return 1;
     }
 
     const bool created = butler::fs::create_directories(root, ec);
@@ -41,6 +41,21 @@ int run_init() {
 
     std::cout << "Created Butler root directory: "
               << root.string() << '\n';
+
+    const auto logs = butler::fs::logs_dir(ec);
+    const auto artifacts = butler::fs::artifacts_dir(ec);
+    const auto runtime = butler::fs::runtime_dir(ec);
+
+    butler::fs::create_directories(logs, ec);
+    butler::fs::create_directories(artifacts, ec);
+    butler::fs::create_directories(runtime, ec);
+
+
+    std::cout << "Created Butler base directories:\n"
+              << "  - " << logs.string() << '\n'
+              << "  - " << artifacts.string() << '\n'
+              << "  - " << runtime.string() << '\n';
+
     return 0;
 }
 

@@ -46,6 +46,41 @@ bool create_directories(const Path& p, std::error_code& ec){
     return std::filesystem::create_directories(p, ec);
     }
 
+Path logs_dir(std::error_code& ec){
+    ec.clear();
+
+    const auto root = root_dir(ec);
+
+    if (ec) {
+        return {};
+    }
+    return root / "logs";
+    }
+
+Path artifacts_dir(std::error_code& ec){
+    ec.clear();
+
+    const auto root = root_dir(ec);
+
+    if (ec) {
+        return {};
+    }
+    return root / "artifacts";
+
+    }
+
+Path runtime_dir(std::error_code& ec){
+    ec.clear();
+    
+    const auto root = root_dir(ec);
+
+    if (ec) {
+        return {};
+    }
+    return root / "runtime";
+}
+
+
 
 std::string format_error(
     std::string_view action,

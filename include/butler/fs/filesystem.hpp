@@ -2,8 +2,8 @@
 
 #include <filesystem>
 #include <string>
-#include <filesystem>
 #include <system_error>
+#include <string_view>
 
 namespace butler::fs {
 
@@ -17,9 +17,15 @@ Path home_dir(std::error_code& ec);
 // Возвращает root directory Butler
 //
 // Для V0 мы приняли политику:
-// Butler живёт в ~/.butler
+// Butler живёт в ~/Butler
 
 Path root_dir(std::error_code& ec);
+
+Path logs_dir(std::error_code& ec);
+
+Path artifacts_dir(std::error_code& ec);
+
+Path runtime_dir(std::error_code& ec);
 
 
 // Проверка существования пути.

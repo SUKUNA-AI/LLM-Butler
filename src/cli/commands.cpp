@@ -7,7 +7,8 @@
 
 namespace butler::cli {
 
-int run_init() {
+int run_init()
+{
     std::error_code ec;
 
     const auto root = butler::fs::root_dir(ec);
@@ -28,7 +29,6 @@ int run_init() {
     if (exists) {
         std::cout << "Butler root directory already exists: "
                   << root.string() << '\n';
-        return 1;
     }
 
     const bool created = butler::fs::create_directories(root, ec);
@@ -36,11 +36,10 @@ int run_init() {
     if (ec || !created) {
         std::cerr << "Could not create Butler root directory: "
                   << root.string() << '\n';
-        return 1;
+    } else {
+        std::cout << "Created Butler root directory: "
+                  << root.string() << '\n';
     }
-
-    std::cout << "Created Butler root directory: "
-              << root.string() << '\n';
 
     const auto logs = butler::fs::logs_dir(ec);
     const auto artifacts = butler::fs::artifacts_dir(ec);
@@ -49,7 +48,6 @@ int run_init() {
     butler::fs::create_directories(logs, ec);
     butler::fs::create_directories(artifacts, ec);
     butler::fs::create_directories(runtime, ec);
-
 
     std::cout << "Created Butler base directories:\n"
               << "  - " << logs.string() << '\n'
@@ -61,13 +59,24 @@ int run_init() {
 
 int run_status()
 {
-    // Заглушка
-    // Реализовать потом:
-    // проверка инициализации
-    // существование директорий
-    // чтение конфига
+    std::error_code ec;
+    const auto root = butler::fs::root_dir(ec);
 
-    std::cout << "run_status не реализован\n";
+    // проверка на существование root
+    if (ec || root.empty()) {
+        std::cerr << "Could not resolve Butler root directory\n";
+        return 1;
+    }
+
+    if (ec) {
+        std::cerr << "Could not check Butler root directory: "
+                  << root.string() << '\n';
+        return 1;
+    }
+
+    butler::fs::ensure_directory_exists(root, "logs", ec);
+    butler::fs::ensure_directory_exists(root, "artifacts", ec);
+    butler::fs::ensure_directory_exists(root, "runtime", ec);
 
     return 0;
 }

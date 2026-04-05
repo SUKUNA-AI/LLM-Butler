@@ -2,8 +2,8 @@
 
 #include <filesystem>
 #include <string>
-#include <system_error>
 #include <string_view>
+#include <system_error>
 
 namespace butler::fs {
 
@@ -27,7 +27,6 @@ Path artifacts_dir(std::error_code& ec);
 
 Path runtime_dir(std::error_code& ec);
 
-
 // Проверка существования пути.
 bool path_exists(const Path& p, std::error_code& ec);
 
@@ -36,11 +35,13 @@ bool is_directory(const Path& p, std::error_code& ec);
 
 bool create_directories(const Path& p, std::error_code& ec);
 
+// проверка текущих папок с красивым и понятным выводом
+bool ensure_directory_exists(const Path& root, std::string_view dir, std::error_code& ec);
+
 // Формирует понятный текст ошибки для пользователя
 std::string format_error(
     std::string_view action,
     const Path& p,
-    const std::error_code& ec
-);
+    const std::error_code& ec);
 
-} //namespace butler::fs
+} // namespace butler::fs

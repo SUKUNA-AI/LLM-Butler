@@ -1,17 +1,46 @@
 #include "butler/cli/commands.hpp"
+#include "butler/fs/filesystem.hpp"
+
 #include <iostream>
 #include <string_view>
+#include <system_error>
 
 namespace butler::cli {
 
-int run_init()
-{
-    // Заглушка
-    // создать рабочую директорию Butler
-    // создать подпапки
-    // создать config
-    std::cout << "init не реализован\n";
+int run_init() {
+    std::error_code ec;
 
+    const auto root = butler::fs::root_dir(ec);
+
+    if (ec || root.empty()) {
+        std::cerr << "Could not resolve Butler root directory\n";
+        return 1;
+    }
+
+    const bool exists = butler::fs::path_exists(root, ec);
+
+    if (ec) {
+        std::cerr << "Could not check Butler root directory: "
+                  << root.string() << '\n';
+        return 1;
+    }
+
+    if (exists) {
+        std::cout << "Butler root directory already exists: "
+                  << root.string() << '\n';
+        return 0;
+    }
+
+    const bool created = butler::fs::create_directories(root, ec);
+
+    if (ec || !created) {
+        std::cerr << "Could not create Butler root directory: "
+                  << root.string() << '\n';
+        return 1;
+    }
+
+    std::cout << "Created Butler root directory: "
+              << root.string() << '\n';
     return 0;
 }
 

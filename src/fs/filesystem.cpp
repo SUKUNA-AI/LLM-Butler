@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <filesystem>
-#include <iostream> // for check_path
 #include <sstream>
 #include <system_error>
 
@@ -10,16 +9,13 @@ namespace butler::fs {
 
 Path home_dir(std::error_code& ec)
 {
-    // error_code - альтернатива try catch, но без остановки программы,
-    // а для записи данных в ec
     ec.clear();
 
-    // getenv - возвращает путь к домашней папке пользователя
     const char* home = std::getenv("HOME");
 
     if (home == nullptr || *home == '\0') {
         ec = std::make_error_code(std::errc::no_such_file_or_directory);
-        return { }; // инициализация по умолчанию для типа Path
+        return { };
     }
 
     return Path(home);
@@ -54,31 +50,30 @@ bool is_directory(const Path& p, std::error_code& ec)
 
 bool create_directories(const Path& p, std::error_code& ec)
 {
+    ec.clear();
 
     return std::filesystem::create_directories(p, ec);
 }
 
-bool ensure_directory_exists(const Path& root, std::string_view dir, std::error_code& ec)
+DirectoryStatus get_directory_status(const Path& p, std::error_code& ec)
 {
-    // возврат функции неспроста bool - может пригодиться в будущем
     ec.clear();
-    Path full_path = root / dir;
 
-    const bool path = path_exists(full_path, ec);
-    if (!path) {
-        std::cout << "  - '" << dir << "' directory not initializated\n";
-        return false;
+    const bool exists = path_exists(p, ec);
+    if (ec) {
+        return DirectoryStatus::missing;
     }
 
-    // вызывать те же функции из namespace butler::fs затратнее
-    const bool directory = std::filesystem::is_directory(full_path, ec);
-    // если по какому-то чудо вместо папок создалось что-то другое
-    if (!directory) {
-        std::filesystem::create_directories(full_path, ec);
+    if (!exists) {
+        return DirectoryStatus::missing;
     }
 
-    std::cout << "  - '" << dir << "' directory initializated. Path: " << full_path << "\n";
-    return true;
+    const bool directory = butler::fs::is_directory(p, ec);
+    if (ec) {
+        return DirectoryStatus::missing;
+    }
+
+    return directory ? DirectoryStatus::directory : DirectoryStatus::not_directory;
 }
 
 Path logs_dir(std::error_code& ec)
@@ -103,6 +98,7 @@ Path artifacts_dir(std::error_code& ec)
     if (ec) {
         return { };
     }
+
     return root / "artifacts";
 }
 
@@ -115,6 +111,7 @@ Path runtime_dir(std::error_code& ec)
     if (ec) {
         return { };
     }
+
     return root / "runtime";
 }
 
@@ -123,24 +120,19 @@ std::string format_error(
     const Path& p,
     const std::error_code& ec)
 {
-    // ostringstream - это поток, в который удобно "собирать" строку по частям.
     std::ostringstream out;
 
-    // Сначала описываем действие.
     out << action << " failed";
 
-    // Если путь непустой - добавим его в сообщение.
     if (!p.empty()) {
         out << " for path: " << p.string();
     }
 
-    // Если ошибка реально есть - добавляем её описание и код.
     if (ec) {
         out << " | error: " << ec.message();
         out << " (code: " << ec.value() << ")";
     }
 
-    // Возвращаем готовую строку.
     return out.str();
 }
 } // namespace butler::fs

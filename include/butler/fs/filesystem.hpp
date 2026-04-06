@@ -10,15 +10,19 @@ namespace butler::fs {
 // Делаем удобное короткое имя
 using Path = std::filesystem::path;
 
-// Возвращает домашнюю директорию пользователя
+enum class DirectoryStatus {
+    missing,
+    directory,
+    not_directory,
+};
 
+// Возвращает домашнюю директорию пользователя
 Path home_dir(std::error_code& ec);
 
 // Возвращает root directory Butler
 //
 // Для V0 мы приняли политику:
 // Butler живёт в ~/Butler
-
 Path root_dir(std::error_code& ec);
 
 Path logs_dir(std::error_code& ec);
@@ -35,8 +39,8 @@ bool is_directory(const Path& p, std::error_code& ec);
 
 bool create_directories(const Path& p, std::error_code& ec);
 
-// проверка текущих папок с красивым и понятным выводом
-bool ensure_directory_exists(const Path& root, std::string_view dir, std::error_code& ec);
+// Возвращает текущее состояние директории, не изменяя файловую систему.
+DirectoryStatus get_directory_status(const Path& p, std::error_code& ec);
 
 // Формирует понятный текст ошибки для пользователя
 std::string format_error(

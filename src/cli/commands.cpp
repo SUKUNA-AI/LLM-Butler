@@ -6,6 +6,85 @@
 #include <system_error>
 
 namespace butler::cli {
+namespace {
+
+bool print_directory_error(std::string_view action, const butler::fs::Path& path, const std::error_code& ec)
+{
+    std::cerr << butler::fs::format_error(action, path, ec) << '\n';
+    return false;
+}
+
+bool ensure_directory_ready(const butler::fs::Path& path, std::string_view label)
+{
+    std::error_code ec;
+    const auto status = butler::fs::get_directory_status(path, ec);
+
+    if (ec) {
+        return print_directory_error("Inspect directory", path, ec);
+    }
+
+    if (status == butler::fs::DirectoryStatus::directory) {
+        std::cout << label << " already exists: " << path.string() << '\n';
+        return true;
+    }
+
+    if (status == butler::fs::DirectoryStatus::not_directory) {
+        std::cerr << label << " exists but is not a directory: "
+                  << path.string() << '\n';
+        return false;
+    }
+
+    const bool created = butler::fs::create_directories(path, ec);
+    if (ec) {
+        return print_directory_error("Create directory", path, ec);
+    }
+
+    if (!created) {
+        std::cerr << "Could not create directory: " << path.string() << '\n';
+        return false;
+    }
+
+    const auto verified_status = butler::fs::get_directory_status(path, ec);
+    if (ec) {
+        return print_directory_error("Verify directory", path, ec);
+    }
+
+    if (verified_status != butler::fs::DirectoryStatus::directory) {
+        std::cerr << "Directory was not created correctly: "
+                  << path.string() << '\n';
+        return false;
+    }
+
+    std::cout << "Created " << label << ": " << path.string() << '\n';
+    return true;
+}
+
+bool report_directory_status(std::string_view label, const butler::fs::Path& path)
+{
+    std::error_code ec;
+    const auto status = butler::fs::get_directory_status(path, ec);
+
+    if (ec) {
+        print_directory_error("Inspect directory", path, ec);
+        return false;
+    }
+
+    if (status == butler::fs::DirectoryStatus::directory) {
+        std::cout << "  - " << label << ": initialized (" << path.string() << ")\n";
+        return true;
+    }
+
+    if (status == butler::fs::DirectoryStatus::not_directory) {
+        std::cout << "  - " << label << ": invalid, path is not a directory ("
+                  << path.string() << ")\n";
+        return false;
+    }
+
+    std::cout << "  - " << label << ": missing (" << path.string() << ")\n";
+    return false;
+}
+
+} // namespace
 
 int run_init()
 {
@@ -18,42 +97,39 @@ int run_init()
         return 1;
     }
 
-    const bool exists = butler::fs::path_exists(root, ec);
-
-    if (ec) {
-        std::cerr << "Could not check Butler root directory: "
-                  << root.string() << '\n';
+    if (!ensure_directory_ready(root, "Butler root directory")) {
         return 1;
     }
 
-    if (exists) {
-        std::cout << "Butler root directory already exists: "
-                  << root.string() << '\n';
-    }
-
-    const bool created = butler::fs::create_directories(root, ec);
-
-    if (ec || !created) {
-        std::cerr << "Could not create Butler root directory: "
-                  << root.string() << '\n';
-    } else {
-        std::cout << "Created Butler root directory: "
-                  << root.string() << '\n';
-    }
-
     const auto logs = butler::fs::logs_dir(ec);
+    if (ec || logs.empty()) {
+        std::cerr << "Could not resolve Butler logs directory\n";
+        return 1;
+    }
+
     const auto artifacts = butler::fs::artifacts_dir(ec);
+    if (ec || artifacts.empty()) {
+        std::cerr << "Could not resolve Butler artifacts directory\n";
+        return 1;
+    }
+
     const auto runtime = butler::fs::runtime_dir(ec);
+    if (ec || runtime.empty()) {
+        std::cerr << "Could not resolve Butler runtime directory\n";
+        return 1;
+    }
 
-    butler::fs::create_directories(logs, ec);
-    butler::fs::create_directories(artifacts, ec);
-    butler::fs::create_directories(runtime, ec);
+    bool all_ready = true;
+    all_ready = ensure_directory_ready(logs, "logs directory") && all_ready;
+    all_ready = ensure_directory_ready(artifacts, "artifacts directory") && all_ready;
+    all_ready = ensure_directory_ready(runtime, "runtime directory") && all_ready;
 
-    std::cout << "Created Butler base directories:\n"
-              << "  - " << logs.string() << '\n'
-              << "  - " << artifacts.string() << '\n'
-              << "  - " << runtime.string() << '\n';
+    if (!all_ready) {
+        std::cerr << "Butler initialization failed\n";
+        return 1;
+    }
 
+    std::cout << "Butler is initialized\n";
     return 0;
 }
 
@@ -62,34 +138,54 @@ int run_status()
     std::error_code ec;
     const auto root = butler::fs::root_dir(ec);
 
-    // проверка на существование root
     if (ec || root.empty()) {
         std::cerr << "Could not resolve Butler root directory\n";
         return 1;
     }
 
-    if (ec) {
-        std::cerr << "Could not check Butler root directory: "
-                  << root.string() << '\n';
+    const auto logs = butler::fs::logs_dir(ec);
+    if (ec || logs.empty()) {
+        std::cerr << "Could not resolve Butler logs directory\n";
         return 1;
     }
 
-    butler::fs::ensure_directory_exists(root, "logs", ec);
-    butler::fs::ensure_directory_exists(root, "artifacts", ec);
-    butler::fs::ensure_directory_exists(root, "runtime", ec);
+    const auto artifacts = butler::fs::artifacts_dir(ec);
+    if (ec || artifacts.empty()) {
+        std::cerr << "Could not resolve Butler artifacts directory\n";
+        return 1;
+    }
+
+    const auto runtime = butler::fs::runtime_dir(ec);
+    if (ec || runtime.empty()) {
+        std::cerr << "Could not resolve Butler runtime directory\n";
+        return 1;
+    }
+
+    std::cout << "Butler workspace: " << root.string() << '\n';
+
+    bool initialized = true;
+    initialized = report_directory_status("root", root) && initialized;
+    initialized = report_directory_status("logs", logs) && initialized;
+    initialized = report_directory_status("artifacts", artifacts) && initialized;
+    initialized = report_directory_status("runtime", runtime) && initialized;
+
+    if (initialized) {
+        std::cout << "Butler is initialized\n";
+    } else {
+        std::cout << "Butler is not initialized\n";
+    }
 
     return 0;
 }
 
-void print_unknow_command(std::string_view command)
+void print_unknown_command(std::string_view command)
 {
-    std::cerr << "Unknow command: " << command << "\n";
+    std::cerr << "Unknown command: " << command << "\n";
     std::cerr << "Use 'butler --help' or 'butler help' to see available commands\n";
 }
 
 void print_help()
 {
-    // help look pretier
     std::cout << "\n"
                  "╔══════════════════════════════════════════════════════════╗\n"
                  "║                    GPU BUTLER v0.1                       ║\n"
@@ -98,29 +194,29 @@ void print_help()
                  "\n"
                  "DESCRIPTION:\n"
                  "  Butler is a tool for managing and monitoring local LLM\n"
-                 "  backends. It allows you to easily initialize workspaces,\n"
-                 "  track status, and manage configurations.\n"
+                 "  backends. It allows you to easily initialize workspaces\n"
+                 "  and verify their base directory structure.\n"
                  "\n"
                  "USAGE:\n"
                  "  butler [command] [options]\n"
                  "\n"
                  "COMMANDS:\n"
-                 "  init              Initialize a new Butler workspace\n"
-                 "                    Creates the necessary folder structure\n"
-                 "                    and default configuration files\n"
+                 "  init              Initialize a Butler workspace\n"
+                 "                    Creates the root and base directories\n"
+                 "                    in ~/Butler\n"
                  "\n"
-                 "  status            Show current Butler status\n"
-                 "                    Displays information about the workspace,\n"
-                 "                    active backends, and resource usage\n"
+                 "  status            Check Butler workspace status\n"
+                 "                    Verifies root, logs, artifacts,\n"
+                 "                    and runtime directories\n"
                  "\n"
                  "  help, --help      Show help message\n"
                  "                    Displays information about available\n"
                  "                    commands and their purposes\n"
                  "\n"
                  "EXAMPLES:\n"
-                 "  butler init       # Create a new workspace\n"
-                 "  butler status     # Check status\n"
-                 "  butler --help     # Show help message\n"
+                 "  ./build/butler init       # Create a new workspace\n"
+                 "  ./build/butler status     # Check status\n"
+                 "  ./build/butler --help     # Show help message\n"
                  "\n"
                  "MORE INFO:\n"
                  "  Visit https://github.com/SUKUNA-AI/LLM-Butler for documentation\n"
@@ -129,13 +225,11 @@ void print_help()
 
 int handle_commands(int argc, char* argv[])
 {
-    // пользователь запустил программу без команд
     if (argc <= 1) {
         print_help();
         return 0;
     }
 
-    // argv[1] - это адрес по которому лежит команда
     const std::string_view command { argv[1] };
 
     if (command == "--help" || command == "help") {
@@ -151,7 +245,7 @@ int handle_commands(int argc, char* argv[])
         return run_status();
     }
 
-    print_unknow_command(command);
+    print_unknown_command(command);
     return 1;
 }
 } // namespace butler::cli

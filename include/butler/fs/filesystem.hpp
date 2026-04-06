@@ -31,17 +31,6 @@ Path artifacts_dir(std::error_code& ec);
 
 Path runtime_dir(std::error_code& ec);
 
-// Проверка существования пути.
-bool path_exists(const Path& p, std::error_code& ec);
-
-// Проверка, что путь существует именно как директория
-bool is_directory(const Path& p, std::error_code& ec);
-
-bool create_directories(const Path& p, std::error_code& ec);
-
-// Возвращает текущее состояние директории, не изменяя файловую систему.
-DirectoryStatus get_directory_status(const Path& p, std::error_code& ec);
-
 // Формирует понятный текст ошибки для пользователя
 std::string format_error(
     std::string_view action,

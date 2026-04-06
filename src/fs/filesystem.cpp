@@ -1,4 +1,5 @@
 #include "butler/fs/filesystem.hpp"
+#include "butler/fs/filesystem_ops.hpp"
 
 #include <cstdlib>
 #include <filesystem>
@@ -32,48 +33,6 @@ Path root_dir(std::error_code& ec)
     }
 
     return home / "Butler";
-}
-
-bool path_exists(const Path& p, std::error_code& ec)
-{
-    ec.clear();
-
-    return std::filesystem::exists(p, ec);
-}
-
-bool is_directory(const Path& p, std::error_code& ec)
-{
-    ec.clear();
-
-    return std::filesystem::is_directory(p, ec);
-}
-
-bool create_directories(const Path& p, std::error_code& ec)
-{
-    ec.clear();
-
-    return std::filesystem::create_directories(p, ec);
-}
-
-DirectoryStatus get_directory_status(const Path& p, std::error_code& ec)
-{
-    ec.clear();
-
-    const bool exists = path_exists(p, ec);
-    if (ec) {
-        return DirectoryStatus::missing;
-    }
-
-    if (!exists) {
-        return DirectoryStatus::missing;
-    }
-
-    const bool directory = butler::fs::is_directory(p, ec);
-    if (ec) {
-        return DirectoryStatus::missing;
-    }
-
-    return directory ? DirectoryStatus::directory : DirectoryStatus::not_directory;
 }
 
 Path logs_dir(std::error_code& ec)

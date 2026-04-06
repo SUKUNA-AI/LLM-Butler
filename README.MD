@@ -29,7 +29,7 @@ cmake --build build
 
 ```bash
 mkdir -p build
-g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp -Iinclude -o build/butler
+g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp src/fs/filesystem_ops.cpp -Iinclude -o build/butler
 ```
 
 ## Запуск

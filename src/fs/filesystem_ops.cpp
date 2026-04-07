@@ -1,5 +1,6 @@
 #include "butler/fs/filesystem_ops.hpp"
 #include "butler/fs/filesystem.hpp"
+#include "butler/fs/app_paths.hpp"
 
 #include <format>
 #include <sstream>
@@ -108,61 +109,67 @@ FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::st
     return res;
 }
 
-FileOperationResult ensure_butler_inizialization()
+FileOperationResult ensure_butler_initialization()
 {
     FileOperationResult res;
     std::error_code ec;
-    const auto root = root_dir(ec);
-    if (ec || root.empty()) {
-        res.message = "Could not resolve Butler root directory\n";
+
+    const auto paths = butler::fs::AppPaths::build(ec);
+    if (ec || !paths.valid()) {
+        res.message = "Could not resolve Butler app paths\n";
         res.result = false;
         return res;
     }
 
-    auto dir_ready = ensure_directory_ready(root, "Butler root directory");
-    if (!dir_ready.result) {
-        res.message = dir_ready.message;
-        res.result = false;
-        return res;
+    auto root = ensure_directory_ready(
+        paths.root_dir(), "Butler root directory"
+    );
+
+    if (!root.result) {
+        return root;
     }
 
-    const auto logs = butler::fs::logs_dir(ec);
-    if (ec || logs.empty()) {
-        res.message = "Could not resolve Butler logs directory\n";
-        res.result = false;
-        return res;
-    }
+    auto logs = ensure_directory_ready(
+        paths.logs_dir(),
+        "logs directory"
+    );
 
-    const auto artifacts = butler::fs::artifacts_dir(ec);
-    if (ec || artifacts.empty()) {
-        res.message = "Could not resolve Butler artifacts directory\n";
-        res.result = false;
-        return res;
-    }
+    auto artifacts = ensure_directory_ready(
+        paths.artifacts_dir(),
+        "artifacts directory"
+    );
 
-    const auto runtime = butler::fs::runtime_dir(ec);
-    if (ec || runtime.empty()) {
-        res.message = "Could not resolve Butler runtime directory\n";
-        res.result = false;
-        return res;
-    }
+    auto runtime = ensure_directory_ready(
+        paths.runtime_dir(),
+        "runtime directory"
+    );
 
-    auto logs_dir = ensure_directory_ready(logs, "logs directory");
-    auto artifacts_dir = ensure_directory_ready(artifacts, "artifacts directory");
-    auto runtime_dir = ensure_directory_ready(runtime, "runtime directory");
-
-    bool all_ready = true;
-    all_ready &= logs_dir.result;
-    all_ready &= artifacts_dir.result;
-    all_ready &= runtime_dir.result;
+    // Собираем
+    const bool all_ready =
+        root.result &&
+        logs.result &&
+        artifacts.result &&
+        runtime.result;
 
     if (!all_ready) {
-        res.message = "Butler initialization failed\n";
+        res.message =
+            "Butler initialization failed\n" +
+            root.message +
+            logs.message +
+            artifacts.message +
+            runtime.message;
         res.result = false;
         return res;
     }
 
-    res.message = std::format("Butler is initialized:\n{}{}{}", logs_dir.message, artifacts_dir.message, runtime_dir.message);
+    // Всё хорошо - возвращаем общий успех
+    res.message =
+        "Butler is initialized:\n" +
+        root.message +
+        logs.message +
+        artifacts.message +
+        runtime.message;
+
     res.result = true;
     return res;
 }
@@ -194,56 +201,48 @@ FileOperationResult report_directory_status(std::string_view label, const butler
     return res;
 }
 
-FileOperationResult check_main_directories()
+FileOperationResult check_main_directories()    
 {
     FileOperationResult res;
     std::error_code ec;
-    const auto root = butler::fs::root_dir(ec);
-    if (ec || root.empty()) {
-        res.message = "Could not resolve Butler root directory\n";
+
+    const auto paths = butler::fs::AppPaths::build(ec);
+
+    if (ec || !paths.valid()) {
+        res.message = "Could not resolve Butler app paths\n";
         res.result = false;
         return res;
     }
 
-    const auto logs = butler::fs::logs_dir(ec);
-    if (ec || logs.empty()) {
-        res.message = "Could not resolve Butler logs directory\n";
-        res.result = false;
-        return res;
-    }
+    auto root = report_directory_status("root", paths.root_dir());
+    auto logs = report_directory_status("logs", paths.logs_dir());
+    auto artifacts = report_directory_status("artifacts", paths.artifacts_dir());
+    auto runtime = report_directory_status("runtime", paths.runtime_dir());
 
-    const auto artifacts = butler::fs::artifacts_dir(ec);
-    if (ec || artifacts.empty()) {
-        res.message = "Could not resolve Butler artifacts directory\n";
-        res.result = false;
-        return res;
-    }
+    const bool initialized =
+        root.result &&
+        logs.result &&
+        artifacts.result &&
+        runtime.result;
 
-    const auto runtime = butler::fs::runtime_dir(ec);
-    if (ec || runtime.empty()) {
-        res.message = "Could not resolve Butler runtime directory\n";
-        res.result = false;
-        return res;
-    }
-
-    res.message = "Butler workspace: " + root.string() + "\n";
-    auto root_dir = report_directory_status("root", root);
-    auto logs_dir = report_directory_status("logs", logs);
-    auto artifacts_dir = report_directory_status("artifacts", artifacts);
-    auto runtime_dir = report_directory_status("runtime", runtime);
-
-    bool initialized = true;
-    initialized &= root_dir.result;
-    initialized &= logs_dir.result;
-    initialized &= artifacts_dir.result;
-    initialized &= runtime_dir.result;
+    res.message = "Butler workspace " + paths.root_dir().string() + "\n";
 
     if (initialized) {
-        res.message += std::format("Butler initialized:\n{}{}{}{}", root_dir.message, logs_dir.message, artifacts_dir.message, runtime_dir.message);
+        res.message +=
+            "Butler initialized:\n" +
+            root.message +
+            logs.message +
+            artifacts.message +
+            runtime.message;
         res.result = true;
     } else {
+        res.message +=
+            "Butler is not initialized\n" +
+            root.message +
+            logs.message +
+            artifacts.message +
+            runtime.message;
         res.result = false;
-        res.message += "Butler is not initialized\n";
     }
 
     return res;

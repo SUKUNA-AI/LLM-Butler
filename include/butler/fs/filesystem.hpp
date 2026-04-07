@@ -25,12 +25,6 @@ Path home_dir(std::error_code& ec);
 // Butler живёт в ~/Butler
 Path root_dir(std::error_code& ec);
 
-Path logs_dir(std::error_code& ec);
-
-Path artifacts_dir(std::error_code& ec);
-
-Path runtime_dir(std::error_code& ec);
-
 // Формирует понятный текст ошибки для пользователя
 std::string format_error(
     std::string_view action,

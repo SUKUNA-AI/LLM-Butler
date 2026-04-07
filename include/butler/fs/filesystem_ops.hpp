@@ -25,8 +25,8 @@ FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::st
 // сообщает о статусе состояния Butler(root) и его подпапкок: logs, artifacts, runtime директорий
 FileOperationResult check_main_directories();
 
-// проверяет иницилиазицаю Butler (и подпапок), если нет то создает
-FileOperationResult ensure_butler_inizialization();
+// проверяет инициализацию Butler (и подпапок), если нет то создает
+FileOperationResult ensure_butler_initialization();
 
 // сообщает о статусе директории (существует/несуществует/не ициализирована)
 FileOperationResult report_directory_status(std::string_view label, const butler::fs::Path& path);

@@ -10,7 +10,7 @@ namespace butler::cli {
 
 int run_init()
 {
-    auto res = butler::fs::ops::check_main_directories();
+    auto res = butler::fs::ops::ensure_butler_initialization();
 
     if (!res.result) {
         std::cerr << res.message;
@@ -23,7 +23,7 @@ int run_init()
 
 int run_status()
 {
-    auto res = butler::fs::ops::ensure_butler_inizialization();
+    auto res = butler::fs::ops::check_main_directories();
 
     if (!res.result) {
         std::cerr << res.message;

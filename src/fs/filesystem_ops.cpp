@@ -31,6 +31,7 @@ bool create_directories(const Path& p, std::error_code& ec)
 
 DirectoryStatus get_directory_status(const Path& p, std::error_code& ec)
 {
+    // возвращает статус директории основываясь на полях enum class
     ec.clear();
 
     const bool exists = path_exists(p, ec);
@@ -61,6 +62,11 @@ print_directory_error(std::string_view action, const butler::fs::Path& path, con
 
 FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::string_view label)
 {
+    /*
+     * сначала фунция проверяет путь и существование директории
+     * затем: в лучшем случае -  создает необходимую дирекотрию
+     *        в худшем случае - выдает ошибку
+     * */
     FileOperationResult res;
     std::error_code ec;
     const auto status = get_directory_status(path, ec);
@@ -147,6 +153,7 @@ FileOperationResult ensure_butler_inizialization()
         return res;
     }
 
+    // создание директорий, если не были созданы
     auto logs_dir = ensure_directory_ready(logs, "logs directory");
     auto artifacts_dir = ensure_directory_ready(artifacts, "artifacts directory");
     auto runtime_dir = ensure_directory_ready(runtime, "runtime directory");
@@ -169,6 +176,8 @@ FileOperationResult ensure_butler_inizialization()
 
 FileOperationResult report_directory_status(std::string_view label, const butler::fs::Path& path)
 {
+    // функция предоставляет информацию о состоянии директории:
+    //      создана, несоздана, пропущена
     FileOperationResult res;
     std::error_code ec;
     const auto status = get_directory_status(path, ec);
@@ -196,6 +205,8 @@ FileOperationResult report_directory_status(std::string_view label, const butler
 
 FileOperationResult check_main_directories()
 {
+    // функция которая нужна в status для проверки корректности
+    //                                     созданных директорий
     FileOperationResult res;
     std::error_code ec;
     const auto root = butler::fs::root_dir(ec);

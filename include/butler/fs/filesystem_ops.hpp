@@ -26,6 +26,9 @@ bool is_directory(const Path& p, std::error_code& ec);
 // создает директорию
 bool create_directories(const Path& p, std::error_code& ec);
 
+// собирает снимок сосотяния
+// StatusSnapshot get_snapshot();
+
 // Возвращает текущее состояние директории, не изменяя файловую систему.
 DirectoryStatus get_directory_status(const Path& p, std::error_code& ec);
 
@@ -39,8 +42,8 @@ FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::st
 // сообщает о статусе состояния Butler(root) и его подпапкок: logs, artifacts, runtime директорий
 FileOperationResult check_main_directories();
 
-// проверяет иницилиазицаю Butler (и подпапок), если нет то создает
-FileOperationResult ensure_butler_inizialization();
+// проверяет инициализацию Butler (и подпапок), если нет то создает
+FileOperationResult ensure_butler_initialization();
 
 // сообщает о статусе директории (существует/несуществует/не ициализирована)
 FileOperationResult report_directory_status(std::string_view label, const butler::fs::Path& path);

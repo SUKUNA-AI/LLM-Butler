@@ -1,7 +1,8 @@
 #include "butler/fs/filesystem_ops.hpp"
-#include "butler/fs/filesystem.hpp"
 #include "butler/fs/app_paths.hpp"
+#include "butler/fs/filesystem.hpp"
 
+#include <filesystem>
 #include <format>
 #include <sstream>
 #include <string_view>
@@ -32,6 +33,7 @@ bool create_directories(const Path& p, std::error_code& ec)
 
 DirectoryStatus get_directory_status(const Path& p, std::error_code& ec)
 {
+    // возвращает статус директории основываясь на полях enum class
     ec.clear();
 
     const bool exists = path_exists(p, ec);
@@ -62,6 +64,11 @@ print_directory_error(std::string_view action, const butler::fs::Path& path, con
 
 FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::string_view label)
 {
+    /*
+     * сначала фунция проверяет путь и существование директории
+     * затем: в лучшем случае -  создает необходимую дирекотрию
+     *        в худшем случае - выдает ошибку
+     * */
     FileOperationResult res;
     std::error_code ec;
     const auto status = get_directory_status(path, ec);
@@ -122,8 +129,7 @@ FileOperationResult ensure_butler_initialization()
     }
 
     auto root = ensure_directory_ready(
-        paths.root_dir(), "Butler root directory"
-    );
+        paths.root_dir(), "Butler root directory");
 
     if (!root.result) {
         return root;
@@ -131,51 +137,35 @@ FileOperationResult ensure_butler_initialization()
 
     auto logs = ensure_directory_ready(
         paths.logs_dir(),
-        "logs directory"
-    );
+        "logs directory");
 
     auto artifacts = ensure_directory_ready(
         paths.artifacts_dir(),
-        "artifacts directory"
-    );
+        "artifacts directory");
 
     auto runtime = ensure_directory_ready(
         paths.runtime_dir(),
-        "runtime directory"
-    );
+        "runtime directory");
 
     // Собираем
-    const bool all_ready =
-        root.result &&
-        logs.result &&
-        artifacts.result &&
-        runtime.result;
+    const bool all_ready = root.result && logs.result && artifacts.result && runtime.result;
 
     if (!all_ready) {
-        res.message =
-            "Butler initialization failed\n" +
-            root.message +
-            logs.message +
-            artifacts.message +
-            runtime.message;
+        res.message = "Butler initialization failed\n" + root.message + logs.message + artifacts.message + runtime.message;
         res.result = false;
         return res;
     }
 
     // Всё хорошо - возвращаем общий успех
-    res.message =
-        "Butler is initialized:\n" +
-        root.message +
-        logs.message +
-        artifacts.message +
-        runtime.message;
-
+    res.message = "Butler is initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
     res.result = true;
     return res;
 }
 
 FileOperationResult report_directory_status(std::string_view label, const butler::fs::Path& path)
 {
+    // функция предоставляет информацию о состоянии директории:
+    //      создана, несоздана, пропущена
     FileOperationResult res;
     std::error_code ec;
     const auto status = get_directory_status(path, ec);
@@ -201,8 +191,10 @@ FileOperationResult report_directory_status(std::string_view label, const butler
     return res;
 }
 
-FileOperationResult check_main_directories()    
+FileOperationResult check_main_directories()
 {
+    // функция которая нужна в status для проверки корректности
+    //                                     созданных директорий
     FileOperationResult res;
     std::error_code ec;
 
@@ -219,29 +211,15 @@ FileOperationResult check_main_directories()
     auto artifacts = report_directory_status("artifacts", paths.artifacts_dir());
     auto runtime = report_directory_status("runtime", paths.runtime_dir());
 
-    const bool initialized =
-        root.result &&
-        logs.result &&
-        artifacts.result &&
-        runtime.result;
+    const bool initialized = root.result && logs.result && artifacts.result && runtime.result;
 
     res.message = "Butler workspace " + paths.root_dir().string() + "\n";
 
     if (initialized) {
-        res.message +=
-            "Butler initialized:\n" +
-            root.message +
-            logs.message +
-            artifacts.message +
-            runtime.message;
+        res.message += "Butler initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
         res.result = true;
     } else {
-        res.message +=
-            "Butler is not initialized\n" +
-            root.message +
-            logs.message +
-            artifacts.message +
-            runtime.message;
+        res.message += "Butler is not initialized\n" + root.message + logs.message + artifacts.message + runtime.message;
         res.result = false;
     }
 

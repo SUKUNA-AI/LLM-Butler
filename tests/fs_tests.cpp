@@ -13,6 +13,7 @@
 
 namespace {
 
+// используется namespace для сохранения явности модулей
 namespace bfs = butler::fs;
 namespace ops = butler::fs::ops;
 
@@ -38,9 +39,10 @@ long long unique_suffix()
 }
 
 struct TempHome {
+    // explicit - для избежания неявного приведения
     explicit TempHome(std::string name)
         : path(std::filesystem::temp_directory_path()
-            / (std::move(name) + "-" + std::to_string(unique_suffix())))
+              / (std::move(name) + "-" + std::to_string(unique_suffix())))
     {
         std::error_code ec;
         std::filesystem::remove_all(path, ec);

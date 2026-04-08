@@ -34,8 +34,11 @@ ctest --test-dir build --output-on-failure
 ## Ручная Сборка
 
 ```bash
+# нужно еще заранее установить библиотеку <nlohmann/json.hpp> 
+# т.к она не является дефолтной в с++, на arch linux делается следующим образом 
+# sudo pacman -S nlohmann-json
 mkdir -p build
-g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp src/fs/filesystem_ops.cpp src/fs/app_paths.cpp -Iinclude -o build/butler
+g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp src/fs/filesystem_ops.cpp src/fs/app_paths.cpp src/fs/butler_config.cpp -Iinclude -o build/butler
 ```
 
 ## Запуск

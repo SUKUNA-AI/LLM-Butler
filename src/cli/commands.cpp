@@ -1,4 +1,5 @@
 #include "butler/cli/commands.hpp"
+#include "butler/fs/butler_config.hpp"
 #include "butler/fs/filesystem.hpp"
 #include "butler/fs/filesystem_ops.hpp"
 
@@ -24,6 +25,19 @@ int run_init()
 int run_status()
 {
     auto res = butler::fs::ops::check_main_directories();
+
+    if (!res.result) {
+        std::cerr << res.message;
+        return 1;
+    }
+
+    std::cout << res.message;
+    return 0;
+}
+
+int run_config()
+{
+    auto res = butler::fs::conf::create_default_config();
 
     if (!res.result) {
         std::cerr << res.message;
@@ -99,6 +113,10 @@ int handle_commands(int argc, char* argv[])
 
     if (command == "status") {
         return run_status();
+    }
+
+    if (command == "config") {
+        return run_config();
     }
 
     print_unknown_command(command);

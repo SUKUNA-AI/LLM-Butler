@@ -4,9 +4,12 @@ namespace butler::fs {
 
 AppPaths AppPaths::build(std::error_code& ec)
 {
+    // данный фабричный метод находит домашнюю папку пользователя
+    // и на основе ее создает пути, где будут создаваться необходимые папки и файлы
     ec.clear();
 
-    AppPaths paths{};
+    // вызов конструктора по умолчанию
+    AppPaths paths { };
 
     const auto root = butler::fs::root_dir(ec);
     if (ec || root.empty()) {

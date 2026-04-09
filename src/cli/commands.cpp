@@ -24,27 +24,20 @@ int run_init()
 
 int run_status()
 {
-    auto res = butler::fs::ops::check_main_directories();
+    auto main = butler::fs::ops::check_main_directories();
+    auto conf = butler::fs::conf::load_config();
 
-    if (!res.result) {
-        std::cerr << res.message;
+    if (!main.result) {
+        std::cerr << main.message;
         return 1;
     }
 
-    std::cout << res.message;
-    return 0;
-}
-
-int run_config()
-{
-    auto res = butler::fs::conf::create_default_config();
-
-    if (!res.result) {
-        std::cerr << res.message;
+    if (!conf.result) {
+        std::cerr << conf.message;
         return 1;
     }
 
-    std::cout << res.message;
+    std::cout << main.message + conf.message;
     return 0;
 }
 
@@ -113,10 +106,6 @@ int handle_commands(int argc, char* argv[])
 
     if (command == "status") {
         return run_status();
-    }
-
-    if (command == "config") {
-        return run_config();
     }
 
     print_unknown_command(command);

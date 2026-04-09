@@ -23,6 +23,9 @@ bool path_exists(const Path& p, std::error_code& ec);
 // Проверка, что путь существует именно как директория
 bool is_directory(const Path& p, std::error_code& ec);
 
+// проверяет является ли путь именно файлом
+bool file_exists(const Path& p, std::error_code& ec);
+
 // создает директорию
 bool create_directories(const Path& p, std::error_code& ec);
 

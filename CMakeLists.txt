@@ -5,6 +5,7 @@ project(LLM-Butler VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # для компилятора clang
 
 add_executable(butler
     apps/cli/main.cpp
@@ -12,6 +13,7 @@ add_executable(butler
     src/fs/filesystem.cpp
     src/fs/filesystem_ops.cpp
     src/fs/app_paths.cpp
+    src/fs/butler_config.cpp
 )
 
 target_include_directories(butler PRIVATE

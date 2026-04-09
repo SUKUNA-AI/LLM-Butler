@@ -11,6 +11,8 @@
 
 namespace butler::fs::conf {
 
+using json = nlohmann::json;
+
 struct ButlerConfig {
     Path root_dir;
     Path logs_dir;
@@ -23,9 +25,15 @@ struct ButlerConfig {
 };
 
 // функция запоминает данные в структуру
-ButlerConfig make_default_config();
+ButlerConfig make_default_config(std::error_code& ec);
 
-// функция записывает данные и создает config.json
+// функция проверяе// функция СОХРАНЯЕТ данные в json файл
+json build_config_json(const ButlerConfig& conf);
+
+// функция записывает создает config.json и проверяет целостность файла
 butler::fs::ops::FileOperationResult create_default_config();
+
+// функция загружает config.json
+butler::fs::ops::FileOperationResult load_config();
 
 } // namespace butler::fs::conf

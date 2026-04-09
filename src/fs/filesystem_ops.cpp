@@ -17,6 +17,13 @@ bool path_exists(const Path& p, std::error_code& ec)
     return std::filesystem::exists(p, ec);
 }
 
+bool file_exists(const Path& p, std::error_code& ec)
+{
+    ec.clear();
+
+    return std::filesystem::is_regular_file(p, ec);
+}
+
 bool is_directory(const Path& p, std::error_code& ec)
 {
     ec.clear();
@@ -111,7 +118,7 @@ FileOperationResult ensure_directory_ready(const butler::fs::Path& path, std::st
         return res;
     }
 
-    res.message = std::format("{} created successfully\n", label);
+    res.message = std::format("  - {} created successfully. Path: {}\n", label, path.string());
     res.result = true;
     return res;
 }

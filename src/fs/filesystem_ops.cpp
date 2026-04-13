@@ -164,7 +164,7 @@ FileOperationResult ensure_butler_initialization()
     }
 
     // Всё хорошо - возвращаем общий успех
-    res.message = "Butler is initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
+    res.message = "MAIN directories are initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
     res.result = true;
     return res;
 }
@@ -220,13 +220,13 @@ FileOperationResult check_main_directories()
 
     const bool initialized = root.result && logs.result && artifacts.result && runtime.result;
 
-    res.message = "Butler workspace " + paths.root_dir().string() + "\n";
+    res.message += "Butler workspace at: " + paths.root_dir().string() + "\n\n";
 
     if (initialized) {
-        res.message += "Butler initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
+        res.message += "MAIN directories initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
         res.result = true;
     } else {
-        res.message += "Butler is not initialized\n" + root.message + logs.message + artifacts.message + runtime.message;
+        res.message += "MAIN directories are not initialized\n" + root.message + logs.message + artifacts.message + runtime.message;
         res.result = false;
     }
 

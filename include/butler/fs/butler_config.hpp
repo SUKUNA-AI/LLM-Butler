@@ -30,10 +30,14 @@ ButlerConfig make_default_config(std::error_code& ec);
 // функция проверяе// функция СОХРАНЯЕТ данные в json файл
 json build_config_json(const ButlerConfig& conf);
 
-// функция записывает создает config.json и проверяет целостность файла
+// функция создает config.json
 butler::fs::ops::FileOperationResult create_default_config();
 
-// функция загружает config.json
+// функция проверяет корректность записанного config.json
+butler::fs::ops::FileOperationResult validate_config_file(const Path& conf_path);
+
+// функция является основным звеном файла, она проверяет, обрабытывает
+// и дает сведения о config.json
 butler::fs::ops::FileOperationResult load_config();
 
 } // namespace butler::fs::conf

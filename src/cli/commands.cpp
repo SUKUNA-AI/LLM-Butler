@@ -11,14 +11,21 @@ namespace butler::cli {
 
 int run_init()
 {
-    auto res = butler::fs::ops::ensure_butler_initialization();
+    auto main = butler::fs::ops::ensure_butler_initialization();
+    auto conf = butler::fs::conf::create_default_config();
 
-    if (!res.result) {
-        std::cerr << res.message;
+    if (!main.result) {
+        std::cerr << main.message;
         return 1;
     }
+    std::cout << main.message;
 
-    std::cout << res.message;
+    if (!conf.result) {
+        std::cerr << conf.message;
+        return 1;
+    }
+    std::cout << conf.message;
+
     return 0;
 }
 
@@ -31,13 +38,14 @@ int run_status()
         std::cerr << main.message;
         return 1;
     }
+    std::cout << main.message;
 
     if (!conf.result) {
         std::cerr << conf.message;
         return 1;
     }
+    std::cout << conf.message;
 
-    std::cout << main.message + conf.message;
     return 0;
 }
 

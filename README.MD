@@ -25,11 +25,20 @@ cmake --build build
 
 После сборки бинарь будет доступен как `build/butler`.
 
+## Тесты
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
 ## Ручная Сборка
 
 ```bash
+# нужно еще заранее установить библиотеку <nlohmann/json.hpp> 
+# т.к она не является дефолтной в с++, на arch linux делается следующим образом 
+# sudo pacman -S nlohmann-json
 mkdir -p build
-g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp -Iinclude -o build/butler
+g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp src/fs/filesystem_ops.cpp src/fs/app_paths.cpp src/fs/butler_config.cpp -Iinclude -o build/butler
 ```
 
 ## Запуск
@@ -63,8 +72,12 @@ g++ -std=c++20 apps/cli/main.cpp src/cli/commands.cpp src/fs/filesystem.cpp -Iin
 ```text
 apps/cli/main.cpp                 # точка входа CLI
 include/butler/cli/commands.hpp  # объявления CLI-команд
-include/butler/fs/filesystem.hpp # файловые утилиты и пути Butler
+include/butler/fs/app_paths.hpp  # пути приложения Butler
+include/butler/fs/filesystem.hpp # файловые утилиты и базовый root path Butler
+include/butler/fs/filesystem_ops.hpp # операции с директориями Butler
 src/cli/commands.cpp             # реализация CLI-команд
-src/fs/filesystem.cpp            # реализация файловых операций
+src/fs/app_paths.cpp             # реализация путей приложения
+src/fs/filesystem.cpp            # реализация базовых файловых утилит
+src/fs/filesystem_ops.cpp        # реализация операций с директориями Butler
 CMakeLists.txt                   # конфигурация сборки через CMake
 ```

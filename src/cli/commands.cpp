@@ -14,17 +14,11 @@ int run_init()
     auto main = butler::fs::ops::ensure_butler_initialization();
     auto conf = butler::fs::conf::create_default_config();
 
-    if (!main.result) {
-        std::cerr << main.message;
-        return 1;
-    }
-    std::cout << main.message;
+    std::cout << main.message + conf.message;
 
-    if (!conf.result) {
-        std::cerr << conf.message;
+    if (!conf.result || !main.result) {
         return 1;
     }
-    std::cout << conf.message;
 
     return 0;
 }
@@ -34,17 +28,11 @@ int run_status()
     auto main = butler::fs::ops::check_main_directories();
     auto conf = butler::fs::conf::load_config();
 
-    if (!main.result) {
-        std::cerr << main.message;
-        return 1;
-    }
-    std::cout << main.message;
+    std::cout << main.message + conf.message;
 
-    if (!conf.result) {
-        std::cerr << conf.message;
+    if (!conf.result || !main.result) {
         return 1;
     }
-    std::cout << conf.message;
 
     return 0;
 }

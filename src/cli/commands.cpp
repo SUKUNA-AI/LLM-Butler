@@ -1,4 +1,5 @@
 #include "butler/cli/commands.hpp"
+#include "butler/fs/app_paths.hpp"
 #include "butler/fs/butler_config.hpp"
 #include "butler/fs/filesystem.hpp"
 #include "butler/fs/filesystem_ops.hpp"
@@ -25,15 +26,11 @@ int run_init()
 
 int run_status()
 {
-    auto main = butler::fs::ops::check_main_directories();
-    auto conf = butler::fs::conf::load_config();
+    std::error_code ec;
+    auto snapshot = butler::fs::ops::build_status_snapshot();
+    auto paths = butler::fs::AppPaths::build(ec);
 
-    std::cout << main.message + conf.message;
-
-    if (!conf.result || !main.result) {
-        return 1;
-    }
-
+    std::cout << render_status_snapshot(snapshot, paths);
     return 0;
 }
 

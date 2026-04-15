@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <format>
+#include <iostream>
 #include <sstream>
 #include <string_view>
 #include <system_error>
@@ -60,8 +61,7 @@ DirectoryStatus get_directory_status(const Path& p, std::error_code& ec)
     return directory ? DirectoryStatus::directory : DirectoryStatus::not_directory;
 }
 
-FileOperationResult
-print_directory_error(std::string_view action, const butler::fs::Path& path, const std::error_code& ec)
+FileOperationResult print_directory_error(std::string_view action, const butler::fs::Path& path, const std::error_code& ec)
 {
     FileOperationResult res;
     res.message = butler::fs::format_error(action, path, ec);
@@ -231,6 +231,142 @@ FileOperationResult check_main_directories()
     }
 
     return res;
+}
+
+BootstrapStatus compute_bootstrap_status(const SnapshotStatus& snap)
+{
+    int count_dir { 0 };
+    bool workspace { false };
+    bool conf_file { false };
+
+    if (snap.workspace_path.empty())
+        return BootstrapStatus::missing;
+    else
+        workspace = true;
+
+    if (!(snap.root_dir == butler::fs::DirectoryStatus::missing)) {
+        count_dir += 1;
+    }
+
+    if (!(snap.logs_dir == butler::fs::DirectoryStatus::missing)) {
+        count_dir += 1;
+    }
+
+    if (!(snap.artifacts_dir == butler::fs::DirectoryStatus::missing)) {
+        count_dir += 1;
+    }
+
+    if (!(snap.runtime_dir == butler::fs::DirectoryStatus::missing)) {
+        count_dir += 1;
+    }
+
+    if (!(snap.config_file == ConfigStatus::not_created)) {
+        conf_file = true;
+    }
+
+    if (count_dir == 4 && conf_file && workspace) {
+        return BootstrapStatus::complete;
+    } else if (count_dir < 4 && conf_file && workspace) {
+        return BootstrapStatus::partial;
+    } else {
+        return BootstrapStatus::missing;
+    }
+}
+
+std::string format_dir_status(DirectoryStatus status)
+{
+    switch (status) {
+    case DirectoryStatus::directory:
+        return "initialized";
+    case DirectoryStatus::not_directory:
+        return "invalid (not a directory)";
+    case DirectoryStatus::missing:
+        return "missing";
+    default:
+        return "unknows";
+    }
+}
+
+std::string format_file_status(ConfigStatus status)
+{
+    switch (status) {
+    case ConfigStatus::created:
+        return "initialized";
+    case ConfigStatus::not_created:
+        return "not initialized";
+    default:
+        return "unknows";
+    }
+}
+
+std::string format_bootstrap_status(BootstrapStatus status)
+{
+    switch (status) {
+    case BootstrapStatus::complete:
+        return "bootstrap = complete. (That's mean successfully initialized)";
+    case BootstrapStatus::partial:
+        return "bootstrap = partial. (That's mean not initialized yet)";
+    case BootstrapStatus::missing:
+        return "bootstrap = missing. (That's mean u should run init)";
+    default:
+        return "unknows";
+    }
+}
+
+std::string render_status_snapshot(const SnapshotStatus& snap, const butler::fs::AppPaths& paths)
+{
+    std::string message { "" };
+
+    // workspace_path
+    message += std::format("Butler workspace at: {}\n", snap.workspace_path.string());
+
+    // Main dirs
+    message += "\nMAIN directories:\n";
+    message += std::format("  - root:      {} at {}\n", format_dir_status(snap.root_dir), paths.root_dir().string());
+    message += std::format("  - logs:      {} at {}\n", format_dir_status(snap.logs_dir), paths.logs_dir().string());
+    message += std::format("  - artifacts: {} at {}\n", format_dir_status(snap.artifacts_dir), paths.artifacts_dir().string());
+    message += std::format("  - runtime:   {} at {}\n", format_dir_status(snap.runtime_dir), paths.runtime_dir().string());
+
+    // Config
+    message += "\nConfig:\n";
+    message += std::format("  -- config.json {} at {}\n", format_file_status(snap.config_file), paths.config_file().string());
+
+    // Bootstrap
+    message += "\nBootstrap:\n";
+    message += std::format("  - {}\n", format_bootstrap_status(snap.bootstrap_status));
+
+    return message;
+}
+
+SnapshotStatus build_status_snapshot()
+{
+    std::error_code ec;
+    SnapshotStatus snapshot;
+
+    auto paths = butler::fs::AppPaths::build(ec);
+    if (ec || !paths.valid()) {
+        snapshot.workspace_path = "";
+        snapshot.root_dir = DirectoryStatus::missing;
+        snapshot.logs_dir = DirectoryStatus::missing;
+        snapshot.artifacts_dir = DirectoryStatus::missing;
+        snapshot.runtime_dir = DirectoryStatus::missing;
+        snapshot.config_file = ConfigStatus::not_created;
+        snapshot.bootstrap_status = BootstrapStatus::missing;
+        return snapshot;
+    }
+
+    snapshot.workspace_path = home_dir(ec);
+    snapshot.root_dir = get_directory_status(paths.root_dir(), ec);
+    snapshot.logs_dir = get_directory_status(paths.logs_dir(), ec);
+    snapshot.artifacts_dir = get_directory_status(paths.artifacts_dir(), ec);
+    snapshot.runtime_dir = get_directory_status(paths.runtime_dir(), ec);
+
+    bool config_exists = file_exists(paths.config_file(), ec);
+    snapshot.config_file = config_exists ? ConfigStatus::created : ConfigStatus::not_created;
+
+    snapshot.bootstrap_status = compute_bootstrap_status(snapshot);
+
+    return snapshot;
 }
 
 } // namespace butler::fs::ops

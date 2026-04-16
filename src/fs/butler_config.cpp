@@ -1,6 +1,7 @@
 #include "butler/fs/butler_config.hpp"
-#include "butler/fs/filesystem_ops.hpp"
+#include "butler/fs/types.hpp"
 
+#include <filesystem>
 #include <format>
 #include <fstream> // for work with files
 #include <nlohmann/json.hpp> // for json file
@@ -55,11 +56,17 @@ butler::fs::ops::FileOperationResult create_default_config()
     Path conf_path = conf.config_file;
 
     // проверка чтобы НЕПЕРЕЗАПИСАТЬ уже существующи файл
-    if (butler::fs::ops::file_exists(conf_path, ec)) {
+    // ДАННЫЙ ФРАГМЕНТ КОДА ЗАККОММЕНТИРОВАН ПОТОМУ ЧТО
+    // одна из сутей init в том, чтобы пересоздать неправильные файлы, директории
+    // т.к. в status теперь генерируется snapshot и там дается совет при bootstap = missing,
+    // запустить build/butler init. Но получается что из-за того что поврежденный файл существует
+    // этот кусок кода не дает переписать этот файл -> файл остается поврежденным
+
+    /*if (std::filesystem::is_regular_file(conf_path, ec)) {
         op_file.result = true;
         op_file.message = std::format("Config already exists: {}\n", conf_path.string());
         return op_file;
-    }
+    }*/
 
     json expected = build_config_json(conf);
 
@@ -146,7 +153,7 @@ butler::fs::ops::FileOperationResult load_config()
         return op_file;
     }
 
-    if (!butler::fs::ops::file_exists(conf_path, ec)) {
+    if (!std::filesystem::is_regular_file(conf_path, ec)) {
         op_file.result = false;
         op_file.message += std::format("  -- File `config.json` not found at: {}\n", conf_path.string());
         return op_file;

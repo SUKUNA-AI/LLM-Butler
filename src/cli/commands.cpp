@@ -3,6 +3,7 @@
 #include "butler/fs/butler_config.hpp"
 #include "butler/fs/filesystem.hpp"
 #include "butler/fs/filesystem_ops.hpp"
+#include "butler/fs/types.hpp"
 
 #include <iostream>
 #include <string_view>
@@ -13,13 +14,23 @@ namespace butler::cli {
 int run_init()
 {
     auto main = butler::fs::ops::ensure_butler_initialization();
-    auto conf = butler::fs::conf::create_default_config();
 
-    std::cout << main.message + conf.message;
-
-    if (!conf.result || !main.result) {
+    // если ошибка в создании основных директорий
+    // то дальше делать нечего
+    if (!main.result) {
+        std::cerr << main.message;
         return 1;
     }
+
+    std::cout << main.message;
+
+    auto conf = butler::fs::conf::create_default_config();
+    if (!conf.result) {
+        std::cerr << conf.message;
+        return 1;
+    }
+
+    std::cout << conf.message;
 
     return 0;
 }

@@ -5,16 +5,11 @@
 #include <string_view>
 #include <system_error>
 
+#include "butler/fs/types.hpp"
+
 namespace butler::fs {
 
-// Делаем удобное короткое имя
 using Path = std::filesystem::path;
-
-enum class DirectoryStatus {
-    missing,
-    directory,
-    not_directory,
-};
 
 // Возвращает домашнюю директорию пользователя
 Path home_dir(std::error_code& ec);

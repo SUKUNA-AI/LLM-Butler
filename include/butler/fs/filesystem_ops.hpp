@@ -1,7 +1,9 @@
 #pragma once
 
 #include "butler/fs/app_paths.hpp"
+#include "butler/fs/butler_config.hpp"
 #include "butler/fs/filesystem.hpp"
+#include "butler/fs/types.hpp"
 
 #include <filesystem>
 #include <format>
@@ -12,41 +14,6 @@
 
 // filesystem operations
 namespace butler::fs::ops {
-
-struct FileOperationResult {
-    bool result;
-    std::string message;
-};
-
-enum class BootstrapStatus {
-    complete, // 4/4 dirs + config.json
-    partial, // 3/4 dirs + config.json
-    missing, // < 3/4 dirs - config.json
-};
-
-enum class ConfigStatus {
-    created,
-    not_created,
-};
-
-struct SnapshotStatus {
-    Path workspace_path;
-    // Paths states
-    DirectoryStatus root_dir;
-    DirectoryStatus logs_dir;
-    DirectoryStatus artifacts_dir;
-    DirectoryStatus runtime_dir;
-    // File state
-    ConfigStatus config_file;
-    //
-    BootstrapStatus bootstrap_status;
-};
-/*
- * нужно проверить существует ли workspace_path,
- * проверить сотсояние каждой директории
- * дале проверить состояние config.json,
- * сохранить результаты в bootstrap_status, и вывести с ошибкой
- * */
 
 // Проверка существования пути.
 bool path_exists(const Path& p, std::error_code& ec);

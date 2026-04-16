@@ -1,6 +1,4 @@
 #include "butler/fs/filesystem_ops.hpp"
-#include "butler/fs/app_paths.hpp"
-#include "butler/fs/filesystem.hpp"
 
 #include <filesystem>
 #include <format>
@@ -164,7 +162,7 @@ FileOperationResult ensure_butler_initialization()
     }
 
     // Всё хорошо - возвращаем общий успех
-    res.message = "MAIN directories are initialized:\n" + root.message + logs.message + artifacts.message + runtime.message;
+    res.message = "MAIN directories are initialized:\n" + root.message + logs.message + artifacts.message + runtime.message + "\n";
     res.result = true;
     return res;
 }
@@ -260,13 +258,15 @@ BootstrapStatus compute_bootstrap_status(const SnapshotStatus& snap)
         count_dir += 1;
     }
 
-    if (!(snap.config_file == ConfigStatus::not_created)) {
-        conf_file = true;
+    if (!(snap.config_file == ConfigStatus::missing)) {
+        if (snap.config_file == ConfigStatus::valid) {
+            conf_file = true;
+        }
     }
 
     if (count_dir == 4 && conf_file && workspace) {
         return BootstrapStatus::complete;
-    } else if (count_dir < 4 && conf_file && workspace) {
+    } else if (count_dir < 4 && workspace && conf_file) {
         return BootstrapStatus::partial;
     } else {
         return BootstrapStatus::missing;
@@ -290,9 +290,11 @@ std::string format_dir_status(DirectoryStatus status)
 std::string format_file_status(ConfigStatus status)
 {
     switch (status) {
-    case ConfigStatus::created:
-        return "initialized";
-    case ConfigStatus::not_created:
+    case ConfigStatus::valid:
+        return "validated & initialized";
+    case ConfigStatus::invalid:
+        return "incorrectly initialized";
+    case ConfigStatus::missing:
         return "not initialized";
     default:
         return "unknows";
@@ -350,19 +352,26 @@ SnapshotStatus build_status_snapshot()
         snapshot.logs_dir = DirectoryStatus::missing;
         snapshot.artifacts_dir = DirectoryStatus::missing;
         snapshot.runtime_dir = DirectoryStatus::missing;
-        snapshot.config_file = ConfigStatus::not_created;
+        snapshot.config_file = ConfigStatus::missing;
         snapshot.bootstrap_status = BootstrapStatus::missing;
         return snapshot;
     }
 
-    snapshot.workspace_path = home_dir(ec);
+    snapshot.workspace_path = paths.root_dir();
     snapshot.root_dir = get_directory_status(paths.root_dir(), ec);
     snapshot.logs_dir = get_directory_status(paths.logs_dir(), ec);
     snapshot.artifacts_dir = get_directory_status(paths.artifacts_dir(), ec);
     snapshot.runtime_dir = get_directory_status(paths.runtime_dir(), ec);
 
     bool config_exists = file_exists(paths.config_file(), ec);
-    snapshot.config_file = config_exists ? ConfigStatus::created : ConfigStatus::not_created;
+    if (config_exists) {
+        auto res = butler::fs::conf::validate_config_file(paths.config_file());
+        // проверка корректности существующего файла
+        snapshot.config_file = res.result ? ConfigStatus::valid : ConfigStatus::invalid;
+
+    } else {
+        snapshot.config_file = ConfigStatus::missing;
+    }
 
     snapshot.bootstrap_status = compute_bootstrap_status(snapshot);
 

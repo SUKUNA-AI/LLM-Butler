@@ -33,6 +33,7 @@ add_executable(butler_fs_tests
     src/fs/filesystem.cpp
     src/fs/filesystem_ops.cpp
     src/fs/app_paths.cpp
+    src/fs/butler_config.cpp 
 )
 
 target_include_directories(butler_fs_tests PRIVATE

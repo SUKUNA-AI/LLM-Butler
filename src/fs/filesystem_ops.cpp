@@ -346,7 +346,7 @@ SnapshotStatus build_status_snapshot()
     SnapshotStatus snapshot;
 
     auto paths = butler::fs::AppPaths::build(ec);
-    if (ec || !paths.valid()) {
+    if (ec || paths.valid()) {
         snapshot.workspace_path = "";
         snapshot.root_dir = DirectoryStatus::missing;
         snapshot.logs_dir = DirectoryStatus::missing;
